@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/fergalhk/loadshed-go/netutil"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 func main() {
@@ -19,7 +20,7 @@ func main() {
 
 	srv := &http.Server{
 		Addr:    "127.0.0.1:9000",
-		Handler: netutil.NewLimitMux(5, mux),
+		Handler: netutil.NewLimitMux(5, mux, sets.New[string]("/livez")),
 	}
 	panic(srv.ListenAndServe())
 }
