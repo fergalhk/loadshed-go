@@ -20,7 +20,7 @@ func main() {
 
 	srv := &http.Server{
 		Addr:    "127.0.0.1:9000",
-		Handler: netutil.NewLimitMux(5, mux, sets.New[string]("/livez")),
+		Handler: netutil.NewLimitMux(5, mux, sets.New[string]("/livez"), time.Second*5),
 	}
 	panic(srv.ListenAndServe())
 }

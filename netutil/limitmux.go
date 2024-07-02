@@ -4,21 +4,24 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"time"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 type LimitMux struct {
-	semCh       chan struct{}
-	handler     http.Handler
-	bypassPaths sets.Set[string]
+	semCh          chan struct{}
+	handler        http.Handler
+	bypassPaths    sets.Set[string]
+	acquireTimeout time.Duration
 }
 
-func NewLimitMux(limit uint, handler http.Handler, bypassPaths sets.Set[string]) http.Handler {
+func NewLimitMux(limit uint, handler http.Handler, bypassPaths sets.Set[string], acquireTimeout time.Duration) http.Handler {
 	return &LimitMux{
-		semCh:       make(chan struct{}, limit),
-		handler:     handler,
-		bypassPaths: bypassPaths,
+		semCh:          make(chan struct{}, limit),
+		handler:        handler,
+		bypassPaths:    bypassPaths,
+		acquireTimeout: acquireTimeout,
 	}
 }
 
@@ -47,11 +50,13 @@ func (l *LimitMux) forwardRequest(w http.ResponseWriter, r *http.Request) {
 }
 
 func (l *LimitMux) acquire(ctx context.Context) error {
+	ctx2, can := context.WithTimeout(ctx, l.acquireTimeout)
+	defer can()
 	select {
 	case l.semCh <- struct{}{}:
 		return nil
-	case <-ctx.Done():
-		return ctx.Err()
+	case <-ctx2.Done():
+		return ctx2.Err()
 	}
 }
 
