@@ -12,7 +12,7 @@ do_request() {
 
 CHILDREN=()
 for i in $(seq 0 39); do
-    do_request "${i}" /do-something-important &
+    do_request "${i}" /do-something-intensive &
     CHILDREN+=("${!}")
     do_request "${i}" /livez &
     CHILDREN+=("${!}")
